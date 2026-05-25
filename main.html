@@ -1,126 +1,1013 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <title>ReVox (声刻) | Voice-triggered Replay Capture</title>
-    <link rel="stylesheet" href="main.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReVox · 声刻</title>
+<style>
+/* ============================================================
+   ReVox · 声刻  —  复古录音室调音台主界面
+   所有质感纯 CSS 实现，无外部资源
+   ============================================================ */
+
+/* ---- 字体：系统等宽 + 衬线显示字，营造仪表/铭牌质感 ---- */
+:root{
+  --font-display: "Bahnschrift","DIN Alternate","Oswald",ui-sans-serif,sans-serif;
+  --font-meter:  ui-monospace,"SF Mono","Cascadia Code","Consolas",monospace;
+  --font-label:  "Helvetica Neue","Segoe UI",system-ui,sans-serif;
+
+  /* 环境 */
+  --foam-base:   #1b1b1d;
+  --foam-low:    #141416;
+  --foam-high:   #242427;
+  --rack-rail:   #0c0c0e;
+
+  /* 拉丝铝 */
+  --alu-1:#cfd2d6; --alu-2:#a6abb1; --alu-3:#7f858c; --alu-4:#5c6167;
+  --alu-edge:#3a3d42;
+
+  /* 木质 */
+  --wood-1:#4a3220; --wood-2:#3a2718; --wood-3:#2c1d12; --wood-4:#603f27;
+
+  /* 软木 */
+  --cork-1:#c9a06a; --cork-2:#b98c52; --cork-3:#9c7340;
+
+  /* 功能高亮 */
+  --rec:#ff2d2d; --rec-glow:#ff5b4a;
+  --amber:#ffb33e; --amber-soft:#ffd27a; --amber-deep:#c9791a;
+  --board-green:#16312a; --board-green-2:#0e211c;
+
+  --ink:#e9ebed;
+  --ink-dim:#9aa0a6;
+  --ink-faint:#5e646b;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--font-label);
+  color:var(--ink);
+  background:#0a0a0b;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ============================================================
+   吸音棉墙面环境 —— 楔形吸音泡棉的斜向格纹
+   用多层 repeating-linear-gradient 模拟楔形棉块的明暗面
+   ============================================================ */
+.studio{
+  position:relative;
+  height:100vh;
+  min-height:680px;
+  padding:14px 16px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  background:
+    /* 顶部环境光晕 */
+    radial-gradient(120% 70% at 50% -10%, rgba(255,179,62,.05), transparent 60%),
+    /* 楔形棉：两组反向斜纹叠出金字塔锥体感 */
+    repeating-linear-gradient(45deg,
+       var(--foam-high) 0 14px, var(--foam-base) 14px 28px),
+    repeating-linear-gradient(-45deg,
+       rgba(0,0,0,.28) 0 14px, rgba(255,255,255,.012) 14px 28px),
+    var(--foam-low);
+  background-blend-mode:normal,normal,overlay,normal;
+}
+/* 墙面四周的暗角，让中央设备更聚焦 */
+.studio::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(130% 100% at 50% 40%, transparent 55%, rgba(0,0,0,.55) 100%);
+}
+/* 细微颗粒噪点 */
+.studio::after{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.05;
+  background-image:radial-gradient(rgba(255,255,255,.9) .5px, transparent .5px);
+  background-size:3px 3px;
+}
+.studio > *{position:relative;z-index:1}
+
+/* ============================================================
+   顶部状态栏 —— 拉丝铝合金机架前面板
+   ============================================================ */
+.topbar{
+  display:flex;align-items:center;gap:18px;
+  height:56px;padding:0 16px 0 14px;
+  border-radius:7px;
+  background:
+    linear-gradient(180deg, var(--alu-1), var(--alu-2) 18%, var(--alu-3) 82%, var(--alu-4));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.85),
+    inset 0 -2px 3px rgba(0,0,0,.4),
+    0 6px 14px rgba(0,0,0,.55),
+    0 1px 0 rgba(0,0,0,.6);
+  position:relative;
+}
+/* 拉丝纹理 */
+.topbar::before{
+  content:"";position:absolute;inset:0;border-radius:7px;pointer-events:none;
+  background:repeating-linear-gradient(90deg,
+     rgba(255,255,255,.05) 0 1px, rgba(0,0,0,.04) 1px 2px);
+  mix-blend-mode:overlay;
+}
+/* 机架螺丝 */
+.screw{
+  width:11px;height:11px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #f1f3f5, #8b9097 55%, #4c5056);
+  box-shadow:inset 0 0 2px rgba(0,0,0,.6), 0 1px 1px rgba(255,255,255,.6);
+  position:relative;flex:0 0 auto;
+}
+.screw::after{
+  content:"";position:absolute;inset:0;margin:auto;width:7px;height:1.5px;
+  background:rgba(0,0,0,.45);border-radius:1px;transform:rotate(35deg);
+}
+
+/* 品牌铭牌 */
+.brand{display:flex;align-items:baseline;gap:9px;user-select:none}
+.brand .logo{
+  font-family:var(--font-display);
+  font-size:25px;font-weight:700;letter-spacing:1.5px;
+  color:#2a2c30;
+  text-shadow:0 1px 0 rgba(255,255,255,.7);
+}
+.brand .logo .vox{color:#7a1414;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+.brand .cn{
+  font-size:12px;letter-spacing:6px;color:#52555a;
+  border-left:1px solid rgba(0,0,0,.3);padding-left:9px;
+  text-shadow:0 1px 0 rgba(255,255,255,.55);
+}
+.brand .model{
+  font-family:var(--font-meter);font-size:9px;letter-spacing:1px;
+  color:#6a6e73;align-self:flex-end;margin-bottom:2px;
+}
+
+/* REC 灯 + 状态 */
+.rec-cluster{margin-left:auto;display:flex;align-items:center;gap:14px}
+.rec-lamp{
+  display:flex;align-items:center;gap:9px;
+  padding:6px 13px 6px 11px;border-radius:5px;
+  background:linear-gradient(180deg,#2b2c2f,#0e0e10);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12), inset 0 -1px 2px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.4);
+}
+.lamp-dot{
+  width:14px;height:14px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, var(--rec-glow), var(--rec) 55%, #7d0000);
+  box-shadow:0 0 10px 2px rgba(255,45,45,.75), inset 0 -1px 2px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.4);
+  animation:recpulse 1.6s ease-in-out infinite;
+}
+@keyframes recpulse{
+  0%,100%{box-shadow:0 0 10px 2px rgba(255,45,45,.75), inset 0 -1px 2px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.4);}
+  50%{box-shadow:0 0 18px 5px rgba(255,45,45,.95), inset 0 -1px 2px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.6);}
+}
+.rec-lamp .txt{font-family:var(--font-display);font-size:13px;letter-spacing:3px;color:#ff6b5e;font-weight:700}
+.rec-lamp.standby .lamp-dot{background:radial-gradient(circle at 35% 30%,#5a5d61,#2e3033 60%,#161719);box-shadow:inset 0 -1px 2px rgba(0,0,0,.6);animation:none}
+.rec-lamp.standby .txt{color:#73777c}
+
+.clock{
+  font-family:var(--font-meter);font-size:15px;letter-spacing:1px;
+  color:#1d1f22;background:linear-gradient(180deg,#b9bdc2,#8e9398);
+  padding:5px 11px;border-radius:4px;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.35), inset 0 -1px 0 rgba(255,255,255,.4);
+}
+
+/* 窗口控制（Overwolf 风格） */
+.winctl{display:flex;gap:7px}
+.winctl button{
+  width:13px;height:13px;border-radius:50%;border:none;cursor:pointer;
+  box-shadow:inset 0 0 2px rgba(0,0,0,.5),0 1px 1px rgba(255,255,255,.5);
+}
+.winctl .min{background:radial-gradient(circle at 35% 30%,#ffe08a,#e0a92a)}
+.winctl .max{background:radial-gradient(circle at 35% 30%,#9be88a,#3aa02a)}
+.winctl .cls{background:radial-gradient(circle at 35% 30%,#ff8a7a,#d0301a)}
+.winctl button:hover{filter:brightness(1.15)}
+.winctl button:active{transform:translateY(1px)}
+
+/* ============================================================
+   主工作区栅格
+   ============================================================ */
+.console{
+  flex:1;
+  display:grid;
+  grid-template-columns: 250px 1fr 320px;
+  grid-template-rows: 1fr auto;
+  grid-template-areas:
+    "meter  tapes  cork"
+    "bottom bottom bottom";
+  gap:12px;
+  min-height:0;
+}
+.zone{
+  border-radius:8px;position:relative;min-height:0;
+  display:flex;flex-direction:column;
+}
+/* 区块标题铭牌（蚀刻在金属上的小标签） */
+.plate{
+  font-family:var(--font-display);
+  font-size:10px;letter-spacing:3px;color:var(--ink-dim);
+  text-transform:uppercase;display:flex;align-items:center;gap:7px;
+}
+.plate::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,currentColor,transparent);opacity:.4}
+.plate .num{font-family:var(--font-meter);color:var(--amber);opacity:.8}
+
+/* ============================================================
+   左侧 · VU 电平表 + 触发灵敏度推子
+   黑色面板 + 暖黄背光 + 琥珀指针
+   ============================================================ */
+.zone-meter{
+  grid-area:meter;
+  background:linear-gradient(180deg,#2a2b2e,#17181a);
+  padding:12px;gap:12px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 8px 18px rgba(0,0,0,.5), inset 0 0 0 1px rgba(0,0,0,.6);
+}
+.zone-meter .plate{margin-bottom:2px}
+
+/* ---- VU 表表头 ---- */
+.vu{
+  position:relative;border-radius:6px;padding:14px 12px 10px;
+  background:
+    radial-gradient(120% 90% at 50% 120%, rgba(255,179,62,.22), transparent 60%),
+    linear-gradient(180deg,#101113,#050506);
+  box-shadow:inset 0 0 20px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.06), 0 1px 0 rgba(255,255,255,.05);
+  overflow:hidden;
+}
+/* 暖黄背光辉光 */
+.vu::before{
+  content:"";position:absolute;left:50%;bottom:-30%;width:140%;height:90%;
+  transform:translateX(-50%);
+  background:radial-gradient(50% 100% at 50% 100%, rgba(255,179,62,.28), transparent 70%);
+  filter:blur(6px);pointer-events:none;
+}
+.vu-scale{position:relative;height:96px}
+.vu-scale svg{display:block;width:100%;height:100%;overflow:visible}
+.vu-arc{fill:none;stroke:rgba(255,210,122,.35);stroke-width:1.5}
+.vu-tick{stroke:var(--amber-soft);stroke-width:1.5}
+.vu-tick.red{stroke:var(--rec)}
+.vu-num{fill:var(--amber-soft);font-family:var(--font-meter);font-size:7px;opacity:.85}
+.vu-num.red{fill:var(--rec-glow)}
+/* 指针 */
+.vu-needle{
+  transform-box:fill-box;transform-origin:bottom center;
+  transition:transform .12s cubic-bezier(.34,1.56,.64,1);
+}
+.vu-needle line{stroke:var(--amber);stroke-width:2;filter:drop-shadow(0 0 3px rgba(255,179,62,.9))}
+.vu-pivot{fill:#1a1208;stroke:var(--amber-deep);stroke-width:1}
+.vu-label{
+  position:absolute;top:8px;left:0;right:0;text-align:center;
+  font-family:var(--font-display);font-size:8px;letter-spacing:3px;
+  color:rgba(255,210,122,.55);
+}
+.vu-db{
+  position:absolute;bottom:6px;right:10px;
+  font-family:var(--font-meter);font-size:11px;color:var(--amber);
+  text-shadow:0 0 6px rgba(255,179,62,.6);
+}
+.vu-peak{
+  position:absolute;bottom:6px;left:10px;display:flex;align-items:center;gap:5px;
+  font-family:var(--font-meter);font-size:8px;color:var(--ink-faint);letter-spacing:1px;
+}
+.peak-led{width:7px;height:7px;border-radius:50%;background:#3a1010;box-shadow:inset 0 0 2px #000}
+.peak-led.on{background:radial-gradient(circle at 35% 30%,var(--rec-glow),var(--rec));box-shadow:0 0 6px var(--rec)}
+
+/* ---- 推子 / Fader ---- */
+.faders{
+  flex:1;display:flex;gap:14px;padding:14px 6px 6px;
+  border-radius:6px;
+  background:linear-gradient(180deg,#202123,#0e0f10);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05), inset 0 0 14px rgba(0,0,0,.6);
+}
+.fader{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;min-height:0}
+.fader-track{
+  position:relative;flex:1;width:8px;border-radius:5px;cursor:pointer;
+  background:linear-gradient(90deg,#050505,#1a1a1c 50%,#050505);
+  box-shadow:inset 0 0 4px rgba(0,0,0,.9), inset 1px 0 1px rgba(255,255,255,.06);
+  margin:4px 0;
+}
+/* 刻度：轨道两侧的 dB 短线 */
+.fader-track::before{
+  content:"";position:absolute;left:-12px;right:-12px;top:2px;bottom:2px;pointer-events:none;
+  background:
+    repeating-linear-gradient(180deg, rgba(255,255,255,.22) 0 1px, transparent 1px 13px) left/9px 100% no-repeat,
+    repeating-linear-gradient(180deg, rgba(255,255,255,.22) 0 1px, transparent 1px 13px) right/9px 100% no-repeat;
+}
+/* 已达灵敏度的暖色填充 */
+.fader-fill{
+  position:absolute;left:0;right:0;bottom:0;border-radius:5px;
+  background:linear-gradient(180deg,var(--amber),var(--amber-deep));
+  box-shadow:0 0 8px rgba(255,179,62,.5);
+}
+.fader-knob{
+  position:absolute;left:50%;width:34px;height:20px;border-radius:4px;
+  margin-left:-17px;
+  background:linear-gradient(180deg,#e8eaec 0%,#b7bbc0 8%,#6d7176 50%,#3c3f43 92%,#1d1f22);
+  box-shadow:0 3px 6px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.7), inset 0 -1px 1px rgba(0,0,0,.5);
+  cursor:grab;transition:filter .15s;
+}
+/* 推子中央指示线 */
+.fader-knob::after{
+  content:"";position:absolute;left:6px;right:6px;top:50%;height:2px;transform:translateY(-50%);
+  background:linear-gradient(90deg,transparent,var(--rec),transparent);border-radius:2px;
+}
+.fader-knob:hover{filter:brightness(1.08)}
+.fader-knob:active{cursor:grabbing}
+.fader-cap{font-family:var(--font-display);font-size:9px;letter-spacing:1px;color:var(--ink-dim)}
+.fader-val{font-family:var(--font-meter);font-size:10px;color:var(--amber)}
+
+/* ============================================================
+   中间 · 磁带架 (高光片段列表) + 波形监视器
+   深色胡桃木质地
+   ============================================================ */
+.zone-tapes{
+  grid-area:tapes;gap:12px;
+}
+
+/* ---- 波形监视器 ---- */
+.wave-monitor{
+  position:relative;border-radius:7px;padding:10px 12px;height:104px;
+  background:
+    radial-gradient(120% 130% at 50% 0%, rgba(255,179,62,.08), transparent 55%),
+    linear-gradient(180deg,#0c0d0f,#060607);
+  box-shadow:inset 0 0 22px rgba(0,0,0,.9), inset 0 0 0 1px rgba(255,179,62,.12), 0 6px 14px rgba(0,0,0,.5);
+  overflow:hidden;flex:0 0 auto;
+}
+/* 示波器网格 */
+.wave-monitor::before{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.4;
+  background:
+    repeating-linear-gradient(90deg,transparent 0 19px, rgba(255,179,62,.08) 19px 20px),
+    repeating-linear-gradient(0deg,transparent 0 19px, rgba(255,179,62,.08) 19px 20px);
+}
+.wave-head{
+  position:absolute;top:8px;left:12px;right:12px;display:flex;justify-content:space-between;
+  font-family:var(--font-meter);font-size:8px;letter-spacing:1px;color:rgba(255,210,122,.55);z-index:2;
+}
+.wave-svg{position:relative;width:100%;height:100%;display:block;z-index:1}
+.wave-line{fill:none;stroke:var(--amber);stroke-width:1.6;filter:drop-shadow(0 0 4px rgba(255,179,62,.8))}
+.wave-mid{stroke:rgba(255,210,122,.25);stroke-width:1;stroke-dasharray:3 3}
+/* 扫描线 */
+.wave-scan{
+  position:absolute;top:0;bottom:0;width:2px;z-index:2;
+  background:linear-gradient(180deg,transparent,rgba(255,179,62,.9),transparent);
+  box-shadow:0 0 8px var(--amber);
+  animation:scan 3.2s linear infinite;
+}
+@keyframes scan{from{left:0}to{left:100%}}
+
+/* ---- 磁带架 ---- */
+.tape-rack{
+  flex:1;border-radius:8px;padding:14px;min-height:0;
+  display:flex;flex-direction:column;gap:10px;
+  background:
+    /* 木纹 */
+    repeating-linear-gradient(91deg, rgba(0,0,0,.10) 0 2px, transparent 2px 5px),
+    repeating-linear-gradient(89deg, rgba(255,255,255,.018) 0 3px, transparent 3px 9px),
+    linear-gradient(180deg,var(--wood-1),var(--wood-3));
+  box-shadow:
+    inset 0 1px 0 rgba(255,200,140,.18),
+    inset 0 0 30px rgba(0,0,0,.5),
+    0 8px 18px rgba(0,0,0,.55),
+    inset 0 0 0 1px rgba(0,0,0,.5);
+}
+.tape-head{display:flex;align-items:center;gap:10px;color:var(--cork-1)}
+.tape-head .plate{color:var(--cork-1)}
+.tape-count{
+  font-family:var(--font-meter);font-size:9px;color:#1a120a;margin-left:auto;
+  background:linear-gradient(180deg,var(--cork-1),var(--cork-3));
+  padding:2px 8px;border-radius:3px;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 1px 2px rgba(0,0,0,.4);
+}
+.tape-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:9px;padding-right:4px}
+.tape-list::-webkit-scrollbar{width:8px}
+.tape-list::-webkit-scrollbar-track{background:rgba(0,0,0,.3);border-radius:4px}
+.tape-list::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--cork-2),var(--cork-3));border-radius:4px}
+
+/* 单盘磁带卡带 */
+.tape{
+  position:relative;display:flex;align-items:center;gap:12px;
+  padding:10px 12px;border-radius:6px;cursor:pointer;
+  background:linear-gradient(180deg,#2c2d30,#171819);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10), 0 3px 7px rgba(0,0,0,.5), inset 0 0 0 1px rgba(0,0,0,.5);
+  transition:transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s, background .18s;
+}
+.tape:hover{transform:translateX(5px);background:linear-gradient(180deg,#34353a,#1c1d1f);box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 6px 14px rgba(0,0,0,.6), 0 0 0 1px rgba(255,179,62,.25)}
+.tape:active{transform:translateX(5px) scale(.995)}
+.tape.playing{box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 4px 12px rgba(0,0,0,.6), 0 0 0 1px var(--rec), 0 0 16px rgba(255,45,45,.3)}
+
+/* 双卷盘 */
+.reels{display:flex;gap:6px;flex:0 0 auto}
+.reel{
+  width:30px;height:30px;border-radius:50%;
+  background:radial-gradient(circle at 50% 50%, #0a0a0b 0 5px, #2a2b2d 5px 6px, #0f0f10 6px 11px, #1f2022 11px);
+  box-shadow:inset 0 0 4px rgba(0,0,0,.9), 0 1px 2px rgba(255,255,255,.06);
+  position:relative;
+}
+.reel::before{ /* 卷盘三孔 */
+  content:"";position:absolute;inset:0;margin:auto;width:18px;height:18px;border-radius:50%;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255,255,255,.25) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 84% 70%, rgba(255,255,255,.25) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 16% 70%, rgba(255,255,255,.25) 0 1.5px, transparent 2px);
+}
+.tape.playing .reel{animation:spin 1.4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* 磁带标签纸 */
+.tape-label{flex:1;min-width:0}
+.tape-title{font-family:var(--font-label);font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tape-meta{display:flex;gap:10px;margin-top:3px;font-family:var(--font-meter);font-size:9px;color:var(--ink-faint)}
+.tape-meta .tag{
+  color:var(--amber-soft);background:rgba(255,179,62,.12);
+  padding:1px 6px;border-radius:3px;letter-spacing:.5px;
+  border:1px solid rgba(255,179,62,.2);
+}
+.tape-meta .tag.kill{color:#ff8a7a;background:rgba(255,45,45,.12);border-color:rgba(255,45,45,.25)}
+.tape-meta .tag.ace{color:#ffd27a;background:rgba(255,179,62,.18);border-color:rgba(255,179,62,.4)}
+.tape-dur{font-family:var(--font-meter);font-size:11px;color:var(--amber);flex:0 0 auto;align-self:flex-start}
+/* 迷你波形条 */
+.tape-bars{display:flex;align-items:flex-end;gap:1.5px;height:16px;flex:0 0 auto;width:46px}
+.tape-bars i{flex:1;background:linear-gradient(180deg,var(--amber-soft),var(--amber-deep));border-radius:1px;opacity:.55}
+.tape:hover .tape-bars i{opacity:.9}
+
+/* ============================================================
+   右侧 · 软木板 (AI 自动标签 / 总结便签 + 红图钉)
+   ============================================================ */
+.zone-cork{grid-area:cork;gap:12px}
+
+.corkboard{
+  flex:1;border-radius:8px;padding:16px 14px;min-height:0;
+  display:flex;flex-direction:column;gap:0;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(0,0,0,.10) 0 2px, transparent 2px),
+    radial-gradient(circle at 70% 60%, rgba(0,0,0,.10) 0 2px, transparent 2px),
+    radial-gradient(circle at 45% 85%, rgba(0,0,0,.08) 0 1.5px, transparent 2px),
+    repeating-radial-gradient(circle at 50% 50%, var(--cork-1) 0 1px, var(--cork-2) 1px 2px),
+    linear-gradient(180deg,var(--cork-1),var(--cork-3));
+  background-size:7px 7px,9px 9px,5px 5px,4px 4px,100% 100%;
+  box-shadow:
+    inset 0 0 0 6px #5a3d22,
+    inset 0 0 0 8px #3a2614,
+    inset 0 2px 14px rgba(0,0,0,.35),
+    0 8px 18px rgba(0,0,0,.55);
+  position:relative;
+}
+.cork-head{
+  display:flex;align-items:center;gap:8px;margin-bottom:12px;
+}
+.cork-head .plate{color:#4a3318}
+.ai-badge{
+  margin-left:auto;font-family:var(--font-meter);font-size:8px;letter-spacing:1px;
+  color:#2a1c0d;background:linear-gradient(180deg,#8de8a0,#3aa84e);
+  padding:2px 7px;border-radius:3px;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 1px 2px rgba(0,0,0,.3);
+  display:flex;align-items:center;gap:4px;
+}
+.ai-badge::before{content:"";width:5px;height:5px;border-radius:50%;background:#0a4a18;box-shadow:0 0 4px #0f8a2e;animation:recpulse 2s infinite}
+
+.notes{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:16px;padding:4px 4px 8px}
+.notes::-webkit-scrollbar{width:6px}
+.notes::-webkit-scrollbar-thumb{background:#5a3d22;border-radius:3px}
+
+/* 便签卡片 */
+.note{
+  position:relative;padding:13px 13px 11px;border-radius:2px;
+  font-family:var(--font-label);
+  box-shadow:0 4px 9px rgba(0,0,0,.35), 0 1px 0 rgba(255,255,255,.3) inset;
+  transition:transform .2s cubic-bezier(.2,.8,.2,1);
+}
+.note:nth-child(odd){transform:rotate(-1.4deg)}
+.note:nth-child(even){transform:rotate(1.1deg)}
+.note:hover{transform:rotate(0deg) scale(1.03);z-index:3;box-shadow:0 10px 22px rgba(0,0,0,.45)}
+.note.yellow{background:linear-gradient(180deg,#fff3b0,#ffe57a)}
+.note.blue{background:linear-gradient(180deg,#bfe3ff,#9ccdf5)}
+.note.green{background:linear-gradient(180deg,#c8f0c0,#a6e09a)}
+/* 红图钉 */
+.pin{
+  position:absolute;top:-9px;left:50%;transform:translateX(-50%);
+  width:16px;height:16px;border-radius:50%;z-index:2;
+  background:radial-gradient(circle at 35% 30%, #ff7a6a, var(--rec) 55%, #8a0f0f);
+  box-shadow:0 3px 5px rgba(0,0,0,.5), inset 0 1px 2px rgba(255,255,255,.6);
+}
+.pin::after{content:"";position:absolute;top:13px;left:50%;transform:translateX(-50%);width:2px;height:7px;background:linear-gradient(180deg,#777,#333);border-radius:1px}
+.note-time{font-family:var(--font-meter);font-size:9px;color:#7a5a1a;margin-bottom:4px;display:flex;justify-content:space-between}
+.note-title{font-size:13px;font-weight:700;color:#3a2a08;margin-bottom:5px}
+.note-body{font-size:11px;line-height:1.5;color:#4a3818}
+.note-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.note-tags span{font-family:var(--font-meter);font-size:8px;padding:1px 6px;border-radius:8px;background:rgba(0,0,0,.12);color:#3a2a08}
+
+/* ============================================================
+   底部控制台 · 拉丝金属 + 橡胶旋钮 + 战术简报板
+   ============================================================ */
+.zone-bottom{
+  grid-area:bottom;
+  display:grid;grid-template-columns: 1fr 1.15fr;gap:12px;
+}
+
+/* ---- 旋钮控制台 ---- */
+.knob-deck{
+  border-radius:8px;padding:14px 18px;
+  display:flex;align-items:center;gap:8px;
+  background:linear-gradient(180deg,var(--alu-1),var(--alu-3) 60%,var(--alu-4));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8), inset 0 -2px 4px rgba(0,0,0,.45), 0 8px 18px rgba(0,0,0,.5);
+  position:relative;
+}
+.knob-deck::before{content:"";position:absolute;inset:0;border-radius:8px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,rgba(0,0,0,.03) 1px 2px);mix-blend-mode:overlay;pointer-events:none}
+
+.knob-group{display:flex;flex-direction:column;align-items:center;gap:7px;flex:1}
+.knob{
+  --ang:-135deg;
+  width:54px;height:54px;border-radius:50%;cursor:pointer;position:relative;
+  background:
+    radial-gradient(circle at 50% 38%, #4a4d52 0 38%, #232427 60%, #0e0f10 100%);
+  box-shadow:
+    0 4px 8px rgba(0,0,0,.6),
+    inset 0 2px 3px rgba(255,255,255,.18),
+    inset 0 -3px 5px rgba(0,0,0,.7),
+    0 1px 0 rgba(255,255,255,.5);
+  transition:transform .12s;
+}
+/* 橡胶滚花边缘 */
+.knob::before{
+  content:"";position:absolute;inset:3px;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg, rgba(255,255,255,.10) 0deg 4deg, rgba(0,0,0,.28) 4deg 8deg);
+  -webkit-mask:radial-gradient(circle,transparent 60%,#000 61%);
+          mask:radial-gradient(circle,transparent 60%,#000 61%);
+}
+/* 指示点 */
+.knob::after{
+  content:"";position:absolute;top:7px;left:50%;width:3px;height:12px;border-radius:2px;
+  background:var(--amber);box-shadow:0 0 5px var(--amber);
+  transform-origin:50% 20px;transform:translateX(-50%) rotate(var(--ang));
+  transition:transform .15s cubic-bezier(.34,1.4,.5,1);
+}
+.knob:hover{filter:brightness(1.1)}
+.knob:active{transform:scale(.96)}
+.knob-cap{font-family:var(--font-display);font-size:9px;letter-spacing:1px;color:#2a2c30;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+.knob-val{font-family:var(--font-meter);font-size:11px;color:#1a1c1f;background:linear-gradient(180deg,#c2c6cb,#94989d);padding:2px 7px;border-radius:3px;box-shadow:inset 0 1px 2px rgba(0,0,0,.3)}
+
+.deck-sep{width:1px;align-self:stretch;margin:6px 2px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.35),transparent)}
+
+/* 大圆形录制按钮 */
+.rec-btn{
+  width:70px;height:70px;border-radius:50%;cursor:pointer;border:none;flex:0 0 auto;
+  background:radial-gradient(circle at 50% 35%, #ff6b5e, var(--rec) 55%, #8a0f0f);
+  box-shadow:0 5px 12px rgba(0,0,0,.6), inset 0 2px 4px rgba(255,255,255,.4), inset 0 -3px 6px rgba(0,0,0,.5), 0 0 0 4px rgba(0,0,0,.2), 0 0 0 5px rgba(255,255,255,.25);
+  color:#fff;font-family:var(--font-display);font-size:13px;font-weight:700;letter-spacing:2px;
+  text-shadow:0 1px 2px rgba(0,0,0,.5);position:relative;transition:transform .1s, box-shadow .2s;
+}
+.rec-btn:hover{box-shadow:0 5px 16px rgba(255,45,45,.5), inset 0 2px 4px rgba(255,255,255,.4), inset 0 -3px 6px rgba(0,0,0,.5), 0 0 0 4px rgba(0,0,0,.2), 0 0 0 5px rgba(255,255,255,.3), 0 0 22px rgba(255,45,45,.5)}
+.rec-btn:active{transform:scale(.94)}
+
+/* ---- 战术简报板 ---- */
+.briefing{
+  border-radius:8px;padding:0;position:relative;overflow:hidden;
+  display:flex;flex-direction:column;
+  background:linear-gradient(180deg,var(--board-green),var(--board-green-2));
+  box-shadow:inset 0 0 40px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.04), 0 8px 18px rgba(0,0,0,.5);
+}
+/* 木框 */
+.briefing::before{
+  content:"";position:absolute;inset:0;border-radius:8px;pointer-events:none;
+  box-shadow:inset 0 0 0 7px #2c1d12, inset 0 0 0 9px #4a3220, inset 0 0 14px rgba(0,0,0,.6);
+}
+/* 粉笔灰底纹 */
+.briefing::after{
+  content:"";position:absolute;inset:9px;border-radius:3px;pointer-events:none;opacity:.06;
+  background:radial-gradient(circle at 30% 20%, #fff 0 1px, transparent 2px),radial-gradient(circle at 70% 60%, #fff 0 1px, transparent 2px);
+  background-size:40px 40px,55px 55px;
+}
+.brief-inner{position:relative;z-index:1;padding:13px 16px;flex:1;display:flex;flex-direction:column;gap:9px}
+.brief-head{display:flex;align-items:center;gap:9px;border-bottom:1px dashed rgba(180,220,190,.3);padding-bottom:8px}
+.brief-head .plate{color:#9fd3b0}
+.brief-head .plate::after{background:linear-gradient(90deg,#9fd3b0,transparent)}
+.coach{
+  margin-left:auto;font-family:var(--font-display);font-size:9px;letter-spacing:2px;
+  color:#0e211c;background:linear-gradient(180deg,#bfe8c8,#7ec79a);padding:2px 8px;border-radius:3px;
+}
+.brief-body{flex:1;display:flex;gap:14px}
+/* 粉笔字分析 */
+.chalk{flex:1;font-family:var(--font-label);color:#d8efe0;display:flex;flex-direction:column;gap:7px}
+.chalk h4{font-family:var(--font-display);font-size:11px;letter-spacing:2px;color:#8fd9a8;font-weight:700;text-shadow:0 0 8px rgba(143,217,168,.4)}
+.chalk-item{display:flex;gap:8px;font-size:11px;line-height:1.45;color:#c4e3cf}
+.chalk-item .mk{font-family:var(--font-meter);color:#ffd27a;flex:0 0 auto}
+.chalk-item .mk.bad{color:#ff8a7a}
+.chalk-item .mk.good{color:#8fe89e}
+/* 迷你战术图 */
+.tac-map{
+  flex:0 0 130px;border-radius:4px;position:relative;
+  background:repeating-linear-gradient(0deg,rgba(143,217,168,.10) 0 1px,transparent 1px 16px),repeating-linear-gradient(90deg,rgba(143,217,168,.10) 0 1px,transparent 1px 16px),rgba(0,0,0,.25);
+  box-shadow:inset 0 0 0 1px rgba(143,217,168,.25);
+}
+.tac-map svg{position:absolute;inset:0;width:100%;height:100%}
+
+/* ============================================================
+   响应式 / 小屏压缩
+   ============================================================ */
+@media (max-width:1400px){
+  .console{grid-template-columns:220px 1fr 280px}
+}
+@media (max-height:760px){
+  .vu-scale{height:78px}
+  .wave-monitor{height:88px}
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <div class="logo">
-                <i class="fas fa-voice"></i>
-                <h1>ReVox <span class="chinese">声刻</span></h1>
-            </div>
-            <div class="status">
-                <span id="gameStatus" class="status-badge offline">
-                    <i class="fas fa-gamepad"></i> Game: Offline
-                </span>
-                <span id="voiceStatus" class="status-badge disabled">
-                    <i class="fas fa-microphone"></i> Voice: Disabled
-                </span>
-            </div>
-        </header>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Game Info Card -->
-            <section class="card">
-                <h2><i class="fas fa-info-circle"></i> Game Status</h2>
-                <div id="gameInfo" class="game-info">
-                    <p><i class="fas fa-hourglass-start"></i> Waiting for Rainbow Six Siege...</p>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="label">Map:</span>
-                            <span id="mapName" class="value">-</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="label">Mode:</span>
-                            <span id="gameMode" class="value">-</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="label">K/D:</span>
-                            <span id="kdRatio" class="value">-</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="label">Round:</span>
-                            <span id="roundNumber" class="value">-</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
+<div class="studio">
 
-            <!-- Voice Control Card -->
-            <section class="card">
-                <h2><i class="fas fa-microphone-alt"></i> Voice Control</h2>
-                <div class="voice-control">
-                    <div class="voice-toggle">
-                        <button id="toggleVoice" class="btn btn-large btn-primary">
-                            <i class="fas fa-microphone-slash"></i> Enable Voice Control
-                        </button>
-                        <p class="hint">Click to enable voice trigger. Say "save that" or "clip that" to capture.</p>
-                    </div>
-                    <div class="voice-commands">
-                        <h3><i class="fas fa-list-alt"></i> Available Commands</h3>
-                        <ul>
-                            <li><code>"save that"</code> - Save last 15 seconds</li>
-                            <li><code>"clip that"</code> - Save last 30 seconds</li>
-                            <li><code>"highlight"</code> - Save last kill</li>
-                            <li><code>"stop listening"</code> - Disable voice</li>
-                        </ul>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Recent Events -->
-            <section class="card">
-                <h2><i class="fas fa-history"></i> Recent Events</h2>
-                <div id="eventLog" class="event-log">
-                    <div class="empty-state">
-                        <i class="fas fa-clock"></i>
-                        <p>Game events will appear here</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Settings -->
-            <section class="card">
-                <h2><i class="fas fa-cog"></i> Settings</h2>
-                <div class="settings">
-                    <div class="setting-item">
-                        <label>
-                            <input type="checkbox" id="autoClipKills" checked>
-                            Auto-clip on kills
-                        </label>
-                        <span class="setting-desc">Automatically save replay when you get a kill</span>
-                    </div>
-                    <div class="setting-item">
-                        <label>
-                            <input type="checkbox" id="autoClipDeaths" checked>
-                            Auto-clip on deaths
-                        </label>
-                        <span class="setting-desc">Save replay when you die (for analysis)</span>
-                    </div>
-                    <div class="setting-item">
-                        <label>
-                            <input type="checkbox" id="notifyOnClip" checked>
-                            Show notification
-                        </label>
-                        <span class="setting-desc">Show desktop notification when clip is saved</span>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <p>ReVox (声刻) - Voice-triggered replay capture for R6 Siege</p>
-            <p class="version">v0.1.0 | Waiting for Overwolf whitelist approval</p>
-        </footer>
+  <!-- ============ 顶部状态栏 ============ -->
+  <header class="topbar">
+    <span class="screw"></span>
+    <div class="brand">
+      <span class="logo">Re<span class="vox">Vox</span></span>
+      <span class="cn">声刻</span>
+      <span class="model">STUDIO MONITOR · MK-R6</span>
     </div>
+    <div class="rec-cluster">
+      <div class="rec-lamp" id="recLamp">
+        <span class="lamp-dot"></span>
+        <span class="txt">REC</span>
+      </div>
+      <div class="clock" id="clock">00:00:00</div>
+      <div class="winctl">
+        <button class="min" title="最小化"></button>
+        <button class="max" title="最大化"></button>
+        <button class="cls" title="关闭"></button>
+      </div>
+    </div>
+    <span class="screw"></span>
+  </header>
 
-    <script src="main.js"></script>
+  <!-- ============ 主控制台 ============ -->
+  <main class="console">
+
+    <!-- ---- 左：VU 表 + 推子 ---- -->
+    <section class="zone zone-meter">
+      <div class="plate"><span class="num">01</span> INPUT · 输入监测</div>
+
+      <!-- VU 表 -->
+      <div class="vu">
+        <div class="vu-label">VOICE LEVEL</div>
+        <div class="vu-scale">
+          <svg viewBox="0 0 200 100" preserveAspectRatio="xMidYMax meet">
+            <!-- 弧线刻度盘 -->
+            <path class="vu-arc" d="M 20 92 A 82 82 0 0 1 180 92"/>
+            <!-- 刻度与数字由 JS 生成 -->
+            <g id="vuTicks"></g>
+            <!-- 指针 -->
+            <g class="vu-needle" id="vuNeedle" transform="translate(100 92) rotate(-52)">
+              <line x1="0" y1="0" x2="0" y2="-76"/>
+            </g>
+            <circle class="vu-pivot" cx="100" cy="92" r="7"/>
+          </svg>
+        </div>
+        <div class="vu-peak"><span class="peak-led" id="peakLed"></span>PEAK</div>
+        <div class="vu-db" id="vuDb">-12 dB</div>
+      </div>
+
+      <!-- 推子 -->
+      <div class="faders">
+        <div class="fader">
+          <div class="fader-track" data-fader="trigger">
+            <div class="fader-fill" style="height:62%"></div>
+            <div class="fader-knob" style="bottom:62%"></div>
+          </div>
+          <div class="fader-cap">触发</div>
+          <div class="fader-val" data-val="trigger">62</div>
+        </div>
+        <div class="fader">
+          <div class="fader-track" data-fader="gain">
+            <div class="fader-fill" style="height:45%"></div>
+            <div class="fader-knob" style="bottom:45%"></div>
+          </div>
+          <div class="fader-cap">增益</div>
+          <div class="fader-val" data-val="gain">45</div>
+        </div>
+        <div class="fader">
+          <div class="fader-track" data-fader="noise">
+            <div class="fader-fill" style="height:28%"></div>
+            <div class="fader-knob" style="bottom:28%"></div>
+          </div>
+          <div class="fader-cap">降噪</div>
+          <div class="fader-val" data-val="noise">28</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---- 中：波形 + 磁带架 ---- -->
+    <section class="zone zone-tapes">
+      <!-- 波形监视器 -->
+      <div class="wave-monitor">
+        <div class="wave-head"><span>WAVEFORM · 实时波形</span><span id="waveTc">44.1kHz / 16bit</span></div>
+        <svg class="wave-svg" viewBox="0 0 600 90" preserveAspectRatio="none">
+          <line class="wave-mid" x1="0" y1="45" x2="600" y2="45"/>
+          <path class="wave-line" id="wavePath" d=""/>
+        </svg>
+        <div class="wave-scan"></div>
+      </div>
+
+      <!-- 磁带架 -->
+      <div class="tape-rack">
+        <div class="tape-head">
+          <div class="plate"><span class="num">02</span> HIGHLIGHTS · 高光磁带</div>
+          <span class="tape-count" id="tapeCount">12 clips</span>
+        </div>
+        <div class="tape-list" id="tapeList"><!-- JS 注入 --></div>
+      </div>
+    </section>
+
+    <!-- ---- 右：软木板 AI 总结 ---- -->
+    <section class="zone zone-cork">
+      <div class="corkboard">
+        <div class="cork-head">
+          <div class="plate"><span class="num">03</span> AI 标签</div>
+          <span class="ai-badge">AI ACTIVE</span>
+        </div>
+        <div class="notes" id="notes"><!-- JS 注入 --></div>
+      </div>
+    </section>
+
+    <!-- ---- 底部：旋钮台 + 战术简报 ---- -->
+    <section class="zone-bottom">
+      <!-- 旋钮控制台 -->
+      <div class="knob-deck">
+        <div class="knob-group">
+          <div class="knob" data-knob="len" data-val="15"></div>
+          <div class="knob-cap">时长 / S</div>
+          <div class="knob-val" data-kval="len">15</div>
+        </div>
+        <div class="knob-group">
+          <div class="knob" data-knob="pre" data-val="5"></div>
+          <div class="knob-cap">前摇 / S</div>
+          <div class="knob-val" data-kval="pre">5</div>
+        </div>
+        <div class="deck-sep"></div>
+        <button class="rec-btn" id="recBtn">REC</button>
+        <div class="deck-sep"></div>
+        <div class="knob-group">
+          <div class="knob" data-knob="key" data-val="F8"></div>
+          <div class="knob-cap">快捷键</div>
+          <div class="knob-val" data-kval="key">F8</div>
+        </div>
+      </div>
+
+      <!-- 战术简报板 -->
+      <div class="briefing">
+        <div class="brief-inner">
+          <div class="brief-head">
+            <div class="plate"><span class="num">04</span> 学习模式 · 战术简报</div>
+            <span class="coach">COACH</span>
+          </div>
+          <div class="brief-body">
+            <div class="chalk">
+              <h4>死亡回放分析 · Clubhouse</h4>
+              <div class="chalk-item"><span class="mk good">✓</span><span>预瞄角度正确，第一枪命中头部判定区</span></div>
+              <div class="chalk-item"><span class="mk bad">✗</span><span>暴露身位过久——开火后未及时拉回掩体</span></div>
+              <div class="chalk-item"><span class="mk">›</span><span>建议：利用脚步声预判，提前架枪 B 点楼梯</span></div>
+            </div>
+            <div class="tac-map">
+              <svg viewBox="0 0 130 130">
+                <rect x="20" y="20" width="90" height="90" fill="none" stroke="rgba(143,217,168,.4)" stroke-width="1.5"/>
+                <line x1="65" y1="20" x2="65" y2="110" stroke="rgba(143,217,168,.25)" stroke-width="1"/>
+                <line x1="20" y1="65" x2="110" y2="65" stroke="rgba(143,217,168,.25)" stroke-width="1"/>
+                <circle cx="45" cy="80" r="4.5" fill="#8fe89e"/>
+                <text x="45" y="96" fill="#8fe89e" font-size="7" text-anchor="middle" font-family="monospace">YOU</text>
+                <circle cx="86" cy="48" r="4.5" fill="#ff8a7a"/>
+                <text x="86" y="40" fill="#ff8a7a" font-size="7" text-anchor="middle" font-family="monospace">ENEMY</text>
+                <path d="M 49 78 L 82 50" stroke="#ffd27a" stroke-width="1.2" stroke-dasharray="3 2"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   ReVox 交互逻辑 (功能接口已留，此处为 UI 演示驱动)
+   ============================================================ */
+(function(){
+  'use strict';
+
+  /* ---------- 工具 ---------- */
+  const $  = (s,r=document)=>r.querySelector(s);
+  const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const lerp=(a,b,t)=>a+(b-a)*t;
+
+  /* ---------- 1. VU 表刻度生成 ---------- */
+  // 弧从 -52° 到 +52°（圆心 100,92，半径 78）
+  const ticksG = $('#vuTicks');
+  const MIN_A=-58, MAX_A=58;          // 度
+  const cx=100, cy=92;
+  const marks=[{v:'-20',a:-58},{v:'-10',a:-36},{v:'-7',a:-18},{v:'-5',a:-2},
+               {v:'-3',a:14},{v:'0',a:32,red:true},{v:'+3',a:58,red:true}];
+  marks.forEach(m=>{
+    const rad=(m.a-90)*Math.PI/180;
+    const r1=72, r2=80;
+    const x1=cx+Math.cos(rad)*r1, y1=cy+Math.sin(rad)*r1;
+    const x2=cx+Math.cos(rad)*r2, y2=cy+Math.sin(rad)*r2;
+    const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',x1);line.setAttribute('y1',y1);
+    line.setAttribute('x2',x2);line.setAttribute('y2',y2);
+    line.setAttribute('class','vu-tick'+(m.red?' red':''));
+    ticksG.appendChild(line);
+    const tx=cx+Math.cos(rad)*64, ty=cy+Math.sin(rad)*64+2;
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',tx);t.setAttribute('y',ty);
+    t.setAttribute('text-anchor','middle');
+    t.setAttribute('class','vu-num'+(m.red?' red':''));
+    t.textContent=m.v;
+    ticksG.appendChild(t);
+  });
+
+  const needle=$('#vuNeedle');
+  const vuDb=$('#vuDb');
+  const peakLed=$('#peakLed');
+  let level=0.3, target=0.3;
+  function tickVU(){
+    // 模拟语音电平波动
+    if(Math.random()<0.08) target=Math.random();
+    level=lerp(level,target,0.12)+(Math.random()-0.5)*0.04;
+    level=clamp(level,0,1);
+    const ang=lerp(MIN_A,MAX_A,level);
+    needle.setAttribute('transform',`translate(${cx} ${cy}) rotate(${ang})`);
+    const db=Math.round(lerp(-20,3,level));
+    vuDb.textContent=(db>=0?'+':'')+db+' dB';
+    vuDb.style.color = db>=0 ? 'var(--rec-glow)' : 'var(--amber)';
+    peakLed.classList.toggle('on', level>0.86);
+  }
+  setInterval(tickVU,90);
+
+  /* ---------- 2. 波形绘制 ---------- */
+  const wavePath=$('#wavePath');
+  const W=600,H=90,MID=45,N=120;
+  let phase=0;
+  function drawWave(){
+    phase+=0.25;
+    let d='M 0 '+MID;
+    for(let i=0;i<=N;i++){
+      const x=i/N*W;
+      const env=Math.sin(i/N*Math.PI)*0.7+0.3;      // 包络
+      const amp=(Math.sin(i*0.6+phase)*0.5+Math.sin(i*0.23-phase*0.7)*0.5)
+                *env*level*38;
+      const y=MID-amp;
+      d+=' L '+x.toFixed(1)+' '+y.toFixed(1);
+    }
+    wavePath.setAttribute('d',d);
+  }
+  setInterval(drawWave,55);
+
+  /* ---------- 3. 磁带列表数据 ---------- */
+  const TAPES=[
+    {t:'Clubhouse · 三杀残局翻盘',  d:'0:18', tags:[['ACE','ace']],        bars:[6,12,9,15,7,11,14]},
+    {t:'Oregon · 大狙穿点',         d:'0:09', tags:[['1K','kill']],        bars:[4,8,14,6,10,5,9]},
+    {t:'Bank · 一防三 1vs3',        d:'0:24', tags:[['CLUTCH','ace']],     bars:[10,14,7,12,15,8,11]},
+    {t:'Coastline · 道具盲狙',      d:'0:06', tags:[['NICE','']],          bars:[5,9,6,11,7,4,8]},
+    {t:'Kafe · 拆雷瞬狙双杀',       d:'0:13', tags:[['2K','kill']],        bars:[8,13,10,6,12,9,7]},
+    {t:'Villa · 残局心理战',         d:'0:31', tags:[['CLUTCH','ace']],     bars:[11,7,14,9,5,13,10]},
+    {t:'Border · 烟雾盲射',          d:'0:08', tags:[['1K','kill']],        bars:[6,10,5,12,8,7,11]},
+  ];
+  const tapeList=$('#tapeList');
+  TAPES.forEach((tp,i)=>{
+    const el=document.createElement('div');
+    el.className='tape';
+    const bars=tp.bars.map(h=>`<i style="height:${h}px"></i>`).join('');
+    const tags=tp.tags.map(([x,c])=>`<span class="tag ${c}">${x}</span>`).join('');
+    el.innerHTML=`
+      <div class="reels"><span class="reel"></span><span class="reel"></span></div>
+      <div class="tape-label">
+        <div class="tape-title">${tp.t}</div>
+        <div class="tape-meta">${tags}<span>今天 14:0${i}</span></div>
+      </div>
+      <div class="tape-bars">${bars}</div>
+      <div class="tape-dur">${tp.d}</div>`;
+    el.addEventListener('click',()=>{
+      $$('.tape').forEach(t=>t.classList.remove('playing'));
+      el.classList.add('playing');
+    });
+    tapeList.appendChild(el);
+  });
+  $('#tapeCount').textContent=TAPES.length+' clips';
+
+  /* ---------- 4. AI 便签数据 ---------- */
+  const NOTES=[
+    {c:'yellow',time:'14:02',ttl:'高光自动识别',
+     body:'检测到关键词「干掉了」「nice shot」+ 击杀音效，已自动剪辑 18 秒片段。',
+     tags:['#三杀','#残局','#Clubhouse']},
+    {c:'blue',time:'13:47',ttl:'情绪峰值',
+     body:'队友语音音量骤升 + 笑声，标记为团队名场面，建议加入合集。',
+     tags:['#名场面','#团队']},
+    {c:'green',time:'13:30',ttl:'本局总结',
+     body:'共触发 4 段高光，平均每段 14 秒。命中率高于你近 7 局均值 12%。',
+     tags:['#日报','#进步']},
+  ];
+  const notesC=$('#notes');
+  NOTES.forEach(n=>{
+    const el=document.createElement('div');
+    el.className='note '+n.c;
+    el.innerHTML=`
+      <span class="pin"></span>
+      <div class="note-time"><span>${n.time}</span><span>AI</span></div>
+      <div class="note-title">${n.ttl}</div>
+      <div class="note-body">${n.body}</div>
+      <div class="note-tags">${n.tags.map(t=>`<span>${t}</span>`).join('')}</div>`;
+    notesC.appendChild(el);
+  });
+
+  /* ---------- 5. 推子拖动 ---------- */
+  $$('.fader-track').forEach(track=>{
+    const fill=$('.fader-fill',track);
+    const knob=$('.fader-knob',track);
+    const name=track.dataset.fader;
+    const valEl=$(`[data-val="${name}"]`);
+    let dragging=false;
+    function set(clientY){
+      const r=track.getBoundingClientRect();
+      let p=1-(clientY-r.top)/r.height;
+      p=clamp(p,0,1);
+      const pct=Math.round(p*100);
+      fill.style.height=pct+'%';
+      knob.style.bottom=pct+'%';
+      if(valEl)valEl.textContent=pct;
+    }
+    const down=e=>{dragging=true;set((e.touches?e.touches[0]:e).clientY);e.preventDefault();};
+    const move=e=>{if(dragging)set((e.touches?e.touches[0]:e).clientY);};
+    const up=()=>dragging=false;
+    track.addEventListener('mousedown',down);
+    window.addEventListener('mousemove',move);
+    window.addEventListener('mouseup',up);
+    track.addEventListener('touchstart',down,{passive:false});
+    window.addEventListener('touchmove',move,{passive:false});
+    window.addEventListener('touchend',up);
+  });
+
+  /* ---------- 6. 旋钮旋转 ---------- */
+  const KEYS=['F6','F7','F8','F9','F10','F11','F12'];
+  $$('.knob').forEach(knob=>{
+    const name=knob.dataset.knob;
+    const valEl=$(`[data-kval="${name}"]`);
+    let step = name==='key' ? KEYS.indexOf(knob.dataset.val) : parseInt(knob.dataset.val,10);
+    function render(){
+      let ang, label;
+      if(name==='key'){
+        step=clamp(step,0,KEYS.length-1);
+        ang=lerp(-135,135,step/(KEYS.length-1));
+        label=KEYS[step];
+      }else{
+        const max = name==='len'?60:15;
+        step=clamp(step,1,max);
+        ang=lerp(-135,135,step/max);
+        label=step;
+      }
+      knob.style.setProperty('--ang',ang+'deg');
+      if(valEl)valEl.textContent=label;
+    }
+    render();
+    knob.addEventListener('wheel',e=>{
+      e.preventDefault();
+      step += e.deltaY<0?1:-1;
+      render();
+    },{passive:false});
+    // 点击拖动旋转
+    let dragY=null;
+    knob.addEventListener('mousedown',e=>{dragY=e.clientY;});
+    window.addEventListener('mousemove',e=>{
+      if(dragY===null)return;
+      const dy=dragY-e.clientY;
+      if(Math.abs(dy)>=14){step+=dy>0?1:-1;dragY=e.clientY;render();}
+    });
+    window.addEventListener('mouseup',()=>dragY=null);
+  });
+
+  /* ---------- 7. 录制状态切换 ---------- */
+  const recBtn=$('#recBtn');
+  const recLamp=$('#recLamp');
+  let recording=true;
+  function syncRec(){
+    recLamp.classList.toggle('standby',!recording);
+    recLamp.querySelector('.txt').textContent = recording?'REC':'IDLE';
+    recBtn.textContent = recording?'STOP':'REC';
+    recBtn.style.background = recording
+      ? 'radial-gradient(circle at 50% 35%, #777, #444 55%, #222)'
+      : 'radial-gradient(circle at 50% 35%, #ff6b5e, #ff2d2d 55%, #8a0f0f)';
+  }
+  syncRec();
+  recBtn.addEventListener('click',()=>{recording=!recording;syncRec();});
+
+  /* ---------- 8. 时钟（录制计时） ---------- */
+  const clock=$('#clock');
+  let sec=0;
+  setInterval(()=>{
+    if(recording)sec++;
+    const h=String(Math.floor(sec/3600)).padStart(2,'0');
+    const m=String(Math.floor(sec/60)%60).padStart(2,'0');
+    const s=String(sec%60).padStart(2,'0');
+    clock.textContent=`${h}:${m}:${s}`;
+  },1000);
+
+})();
+</script>
 </body>
 </html>

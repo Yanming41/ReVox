@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReVox · 设置</title>
+<style>
+/* ============================================================
+   ReVox · 声刻 — 设置 / 设备背面的接线面板
+   把老式调音台翻过来看背面：拨码开关、旋钮、刻字铭牌
+   改动即生效，没有保存按钮
+   ============================================================ */
+:root{
+  --font-display:"Bahnschrift","DIN Alternate",ui-sans-serif,sans-serif;
+  --font-meter:ui-monospace,"SF Mono","Cascadia Code","Consolas",monospace;
+  --font-label:"Helvetica Neue","Segoe UI",system-ui,sans-serif;
+
+  --plate-1:#b9bdc2;--plate-2:#9a9fa5;--plate-3:#7c8187;--plate-4:#646970;
+  --engrave-dark:rgba(0,0,0,.55);
+  --engrave-light:rgba(255,255,255,.85);
+  --amber:#ffb33e;--amber-soft:#ffd27a;--amber-deep:#c9791a;
+  --rec:#ff2d2d;
+  --green:#3aa84e;--green-soft:#8de8a0;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:var(--font-label);
+  background:#0a0a0b;overflow:auto;-webkit-font-smoothing:antialiased;color:#2a2c30;
+}
+.bay{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:30px;
+  background:
+    radial-gradient(80% 60% at 50% 20%, rgba(255,179,62,.04), transparent 60%),
+    repeating-linear-gradient(45deg,#161618 0 16px,#101012 16px 32px),#0a0a0b;
+}
+
+/* ============================================================
+   金属底板 —— 哑光拉丝铝
+   ============================================================ */
+.panel{
+  width:100%;max-width:980px;border-radius:14px;position:relative;
+  padding:30px 36px 34px;
+  background:linear-gradient(150deg,var(--plate-1),var(--plate-2) 40%,var(--plate-3) 80%,var(--plate-4));
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.6),
+    inset 0 -3px 6px rgba(0,0,0,.35),
+    0 24px 50px rgba(0,0,0,.65),
+    0 2px 0 rgba(0,0,0,.5);
+}
+/* 拉丝纹理（横向细密） */
+.panel::before{
+  content:"";position:absolute;inset:0;border-radius:14px;pointer-events:none;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,rgba(0,0,0,.035) 1px 2px);
+  mix-blend-mode:overlay;
+}
+/* 四角螺丝 */
+.panel .screw{position:absolute;width:15px;height:15px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#eef0f2,#8b9097 55%,#4c5056);
+  box-shadow:inset 0 0 3px rgba(0,0,0,.6),0 1px 1px rgba(255,255,255,.7);z-index:2}
+.panel .screw::after{content:"";position:absolute;inset:0;margin:auto;width:9px;height:1.8px;background:rgba(0,0,0,.5);border-radius:1px}
+.panel .screw.s1{top:14px;left:14px}.panel .screw.s1::after{transform:rotate(25deg)}
+.panel .screw.s2{top:14px;right:14px}.panel .screw.s2::after{transform:rotate(115deg)}
+.panel .screw.s3{bottom:14px;left:14px}.panel .screw.s3::after{transform:rotate(70deg)}
+.panel .screw.s4{bottom:14px;right:14px}.panel .screw.s4::after{transform:rotate(155deg)}
+
+/* 顶部刻字标题铭牌 */
+.panel-head{text-align:center;margin-bottom:26px}
+.panel-head h1{
+  font-family:var(--font-display);font-size:22px;letter-spacing:6px;font-weight:700;
+  color:#4a4f55;
+  /* 凹刻：暗字 + 下方白色高光边 */
+  text-shadow:0 1px 0 rgba(255,255,255,.75),0 -1px 1px rgba(0,0,0,.3);
+}
+.panel-head .sub{
+  font-family:var(--font-meter);font-size:10px;letter-spacing:3px;color:#5a5f65;margin-top:6px;
+  text-shadow:0 1px 0 rgba(255,255,255,.5);
+}
+.live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 5px var(--green-soft);margin-right:6px;animation:lp 2s infinite}
+@keyframes lp{50%{opacity:.4}}
+
+/* 分区蚀刻槽线 */
+.groove{height:2px;margin:6px 0 22px;border-radius:2px;
+  background:linear-gradient(180deg,rgba(0,0,0,.3),rgba(255,255,255,.4));}
+
+/* ============================================================
+   控件网格
+   ============================================================ */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px 30px}
+.cell{
+  position:relative;border-radius:10px;padding:18px 16px 14px;
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+  /* 凹槽底：控件嵌在底板凹陷里 */
+  background:linear-gradient(180deg,rgba(0,0,0,.10),rgba(255,255,255,.06));
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.28),inset 0 -1px 0 rgba(255,255,255,.4);
+}
+.cell.wide{grid-column:span 1}
+
+/* 刻字铭牌标签 */
+.engrave{
+  font-family:var(--font-display);font-size:11px;letter-spacing:2px;font-weight:700;
+  color:#4a4f55;text-align:center;
+  /* 凹刻效果：文字偏暗，下方亮边模拟刻槽底反光 */
+  text-shadow:0 1px 0 rgba(255,255,255,.7),0 -1px 1px rgba(0,0,0,.35);
+}
+.engrave .en{display:block;font-family:var(--font-meter);font-size:8px;letter-spacing:1px;color:#777c82;margin-top:2px;font-weight:600;text-shadow:0 1px 0 rgba(255,255,255,.55)}
+.readout{
+  font-family:var(--font-meter);font-size:11px;color:#1d1f22;
+  background:linear-gradient(180deg,#caced3,#9a9fa5);padding:2px 9px;border-radius:3px;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.3),inset 0 -1px 0 rgba(255,255,255,.4);
+}
+
+/* ============================================================
+   拨杆开关 Toggle Switch
+   ============================================================ */
+.toggle{
+  width:54px;height:84px;border-radius:10px;cursor:pointer;position:relative;
+  background:linear-gradient(180deg,#2a2b2e,#0e0f10);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.8),inset 0 -1px 0 rgba(255,255,255,.1),0 1px 0 rgba(255,255,255,.5);
+}
+/* 上/下档位标记 */
+.toggle .pos{position:absolute;left:0;right:0;text-align:center;font-family:var(--font-meter);font-size:8px;color:#6a6f75;letter-spacing:1px}
+.toggle .pos.on{top:6px;color:var(--green-soft)}
+.toggle .pos.off{bottom:6px}
+/* 金属杆 + 橡胶帽 */
+.toggle .lever{
+  position:absolute;left:50%;width:26px;height:34px;margin-left:-13px;border-radius:7px;
+  background:linear-gradient(180deg,#1a1b1e 0%,#2e3033 30%,#16171a 100%);
+  box-shadow:0 4px 7px rgba(0,0,0,.6),inset 0 2px 3px rgba(255,255,255,.18),inset 0 -3px 5px rgba(0,0,0,.6);
+  transition:top .18s cubic-bezier(.5,1.8,.5,1),bottom .18s;
+  top:42px;
+}
+.toggle .lever::after{ /* 杆体连接 */
+  content:"";position:absolute;left:50%;top:-10px;width:8px;height:14px;margin-left:-4px;
+  background:linear-gradient(90deg,#5c6167,#a6abb1,#5c6167);border-radius:3px;box-shadow:0 1px 2px rgba(0,0,0,.5);
+}
+.toggle.on .lever{top:8px}
+.toggle.on{box-shadow:inset 0 2px 5px rgba(0,0,0,.8),inset 0 -1px 0 rgba(255,255,255,.1),0 1px 0 rgba(255,255,255,.5),inset 0 0 12px rgba(143,232,160,.25)}
+
+/* ============================================================
+   旋钮 Knob（大/小）
+   ============================================================ */
+.knob-cell .ring{position:relative;width:96px;height:96px;display:flex;align-items:center;justify-content:center}
+.knob-cell.small .ring{width:72px;height:72px}
+/* 刻度盘：白线在黑环上 */
+.dial{
+  position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle,transparent 60%,#0e0f10 61%);
+}
+.dial .ticks{position:absolute;inset:0}
+.dial .ticks i{position:absolute;top:50%;left:50%;width:2px;height:7px;margin:-48px 0 0 -1px;
+  background:rgba(255,255,255,.55);transform-origin:50% 48px;border-radius:1px}
+.knob-cell.small .dial .ticks i{margin-top:-36px;transform-origin:50% 36px;height:5px}
+.dial .ticks i.major{height:10px;background:rgba(255,255,255,.85)}
+.knob-cell.small .dial .ticks i.major{height:7px}
+/* 旋钮本体：哑光黑橡胶，侧面防滑纹 */
+.knob{
+  width:62px;height:62px;border-radius:50%;cursor:grab;position:relative;z-index:2;
+  background:radial-gradient(circle at 50% 38%,#3a3d42 0 36%,#1f2123 62%,#0a0b0c 100%);
+  box-shadow:0 4px 9px rgba(0,0,0,.6),inset 0 2px 3px rgba(255,255,255,.16),inset 0 -3px 6px rgba(0,0,0,.7);
+}
+.knob-cell.small .knob{width:46px;height:46px}
+.knob::before{content:"";position:absolute;inset:3px;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.10) 0 4deg,rgba(0,0,0,.30) 4deg 8deg);
+  -webkit-mask:radial-gradient(circle,transparent 58%,#000 59%);mask:radial-gradient(circle,transparent 58%,#000 59%)}
+/* 指示线 */
+.knob::after{content:"";position:absolute;top:6px;left:50%;width:3px;height:14px;margin-left:-1.5px;border-radius:2px;
+  background:var(--amber);box-shadow:0 0 5px var(--amber);transform-origin:50% 25px;transform:rotate(var(--ang,-135deg));
+  transition:transform .12s cubic-bezier(.34,1.4,.5,1)}
+.knob-cell.small .knob::after{height:10px;transform-origin:50% 17px}
+.knob:active{cursor:grabbing}
+.knob.spin{filter:brightness(1.1)}
+
+/* ============================================================
+   拨轮 Jog Wheel（快捷键绑定）
+   ============================================================ */
+.jog-cell .jog-wrap{position:relative;width:110px;height:110px;display:flex;align-items:center;justify-content:center}
+.jog{
+  width:104px;height:104px;border-radius:50%;cursor:grab;position:relative;
+  /* 金属外圈 */
+  background:radial-gradient(circle at 50% 40%,#cfd2d6 0 50%,#8b9097 64%,#4c5056 80%,#2a2c2f 100%);
+  box-shadow:0 5px 12px rgba(0,0,0,.6),inset 0 2px 3px rgba(255,255,255,.6),inset 0 -3px 6px rgba(0,0,0,.5);
+}
+/* 橡胶内圈 */
+.jog::before{content:"";position:absolute;inset:18px;border-radius:50%;
+  background:radial-gradient(circle at 50% 40%,#2a2b2e,#0e0f10);
+  box-shadow:inset 0 2px 4px rgba(255,255,255,.12),inset 0 -3px 6px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.2)}
+/* 外圈凹点（飞梭手指槽） */
+.jog .dimple{position:absolute;top:50%;left:50%;width:10px;height:10px;border-radius:50%;margin:-5px 0 0 -5px;
+  background:radial-gradient(circle at 40% 35%,#5c6167,#16171a);box-shadow:inset 0 0 3px #000;transform-origin:50% 50px}
+.jog .keycap{position:absolute;inset:0;margin:auto;width:46px;height:30px;border-radius:5px;z-index:2;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-meter);font-size:14px;font-weight:700;color:var(--amber);
+  background:linear-gradient(180deg,#1a1b1e,#0a0b0c);
+  box-shadow:inset 0 1px 2px rgba(255,255,255,.15),inset 0 -2px 3px rgba(0,0,0,.6),0 0 8px rgba(255,179,62,.25);
+  text-shadow:0 0 6px rgba(255,179,62,.6)}
+.jog:active{cursor:grabbing}
+
+/* 拨杆组（存储格式：三选一） */
+.format-cell{grid-column:span 2}
+.fmt-row{display:flex;gap:14px;align-items:flex-end;justify-content:center;width:100%}
+.fmt-opt{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer}
+.fmt-sw{width:38px;height:60px;border-radius:8px;position:relative;
+  background:linear-gradient(180deg,#2a2b2e,#0e0f10);
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.5)}
+.fmt-sw .lv{position:absolute;left:50%;width:20px;height:24px;margin-left:-10px;border-radius:5px;top:30px;
+  background:linear-gradient(180deg,#16171a,#2e3033);
+  box-shadow:0 3px 5px rgba(0,0,0,.6),inset 0 1px 2px rgba(255,255,255,.15);transition:top .16s cubic-bezier(.5,1.8,.5,1)}
+.fmt-opt.on .fmt-sw .lv{top:6px}
+.fmt-opt.on .fmt-sw{box-shadow:inset 0 2px 4px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.5),inset 0 0 10px rgba(255,179,62,.25)}
+.fmt-name{font-family:var(--font-meter);font-size:10px;letter-spacing:1px;color:var(--plate-3);
+  text-shadow:0 1px 0 rgba(255,255,255,.6)}
+.fmt-opt.on .fmt-name{color:var(--amber-deep)}
+
+@media (max-width:880px){.grid{grid-template-columns:repeat(2,1fr)}.format-cell{grid-column:span 2}}
+@media (max-width:560px){.grid{grid-template-columns:1fr}.format-cell,.cell.wide{grid-column:span 1}}
+</style>
+</head>
+<body>
+
+<div class="bay">
+  <div class="panel">
+    <span class="screw s1"></span><span class="screw s2"></span><span class="screw s3"></span><span class="screw s4"></span>
+
+    <div class="panel-head">
+      <h1>ReVox 设置</h1>
+      <div class="sub"><span class="live-dot"></span>CONFIG PANEL · 改动即生效</div>
+    </div>
+    <div class="groove"></div>
+
+    <div class="grid">
+
+      <!-- 触发灵敏度（大旋钮 + 刻度） -->
+      <div class="cell knob-cell" data-knob="sens">
+        <div class="engrave">触发灵敏度<span class="en">TRIGGER SENS</span></div>
+        <div class="ring">
+          <div class="dial"><div class="ticks"></div></div>
+          <div class="knob"></div>
+        </div>
+        <div class="readout"><span data-out="sens">6</span> / 10</div>
+      </div>
+
+      <!-- 录制前时长（小旋钮） -->
+      <div class="cell knob-cell small" data-knob="pre">
+        <div class="engrave">录制前时长<span class="en">PRE-ROLL</span></div>
+        <div class="ring">
+          <div class="dial"><div class="ticks"></div></div>
+          <div class="knob"></div>
+        </div>
+        <div class="readout"><span data-out="pre">5</span> 秒</div>
+      </div>
+
+      <!-- 录制后时长（小旋钮） -->
+      <div class="cell knob-cell small" data-knob="post">
+        <div class="engrave">录制后时长<span class="en">POST-ROLL</span></div>
+        <div class="ring">
+          <div class="dial"><div class="ticks"></div></div>
+          <div class="knob"></div>
+        </div>
+        <div class="readout"><span data-out="post">8</span> 秒</div>
+      </div>
+
+      <!-- 自动录制（拨杆） -->
+      <div class="cell" data-toggle="auto">
+        <div class="engrave">自动录制<span class="en">AUTO-REC</span></div>
+        <div class="toggle on">
+          <span class="pos on">ON</span>
+          <div class="lever"></div>
+          <span class="pos off">OFF</span>
+        </div>
+      </div>
+
+      <!-- 学习模式（拨杆） -->
+      <div class="cell" data-toggle="learn">
+        <div class="engrave">学习模式<span class="en">LEARN MODE</span></div>
+        <div class="toggle">
+          <span class="pos on">ON</span>
+          <div class="lever"></div>
+          <span class="pos off">OFF</span>
+        </div>
+      </div>
+
+      <!-- Overlay 显示（拨杆） -->
+      <div class="cell" data-toggle="overlay">
+        <div class="engrave">游戏覆盖层<span class="en">OVERLAY</span></div>
+        <div class="toggle on">
+          <span class="pos on">ON</span>
+          <div class="lever"></div>
+          <span class="pos off">OFF</span>
+        </div>
+      </div>
+
+      <!-- 快捷键绑定（拨轮 Jog Wheel） -->
+      <div class="cell jog-cell" data-jog="key">
+        <div class="engrave">快捷键绑定<span class="en">HOTKEY · 旋转拨轮</span></div>
+        <div class="jog-wrap">
+          <div class="jog">
+            <span class="dimple"></span>
+            <span class="keycap" data-out="key">F8</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 存储格式（拨杆组） -->
+      <div class="cell format-cell" data-format>
+        <div class="engrave">存储格式<span class="en">FORMAT · 单选</span></div>
+        <div class="fmt-row">
+          <div class="fmt-opt" data-fmt="MP4"><div class="fmt-sw"><div class="lv"></div></div><div class="fmt-name">MP4</div></div>
+          <div class="fmt-opt on" data-fmt="WEBM"><div class="fmt-sw"><div class="lv"></div></div><div class="fmt-name">WEBM</div></div>
+          <div class="fmt-opt" data-fmt="MOV"><div class="fmt-sw"><div class="lv"></div></div><div class="fmt-name">MOV</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const lerp=(a,b,t)=>a+(b-a)*t;
+
+  /* ---------- 生成刻度盘刻线 ---------- */
+  document.querySelectorAll('.dial .ticks').forEach(t=>{
+    const cell=t.closest('.knob-cell');
+    const N = cell.classList.contains('small') ? 11 : 11;   // 0..10
+    for(let i=0;i<N;i++){
+      const i_=document.createElement('i');
+      const ang=lerp(-135,135,i/(N-1));
+      i_.style.transform=`rotate(${ang}deg)`;
+      if(i%5===0)i_.classList.add('major');
+      t.appendChild(i_);
+    }
+  });
+
+  /* ---------- 旋钮：拖拽 + 档位阻尼 ---------- */
+  const knobConf={
+    sens:{min:1,max:10,val:6,step:1},
+    pre :{min:1,max:10,val:5,step:1},
+    post:{min:1,max:10,val:8,step:1},
+  };
+  document.querySelectorAll('.knob-cell').forEach(cell=>{
+    const name=cell.dataset.knob;
+    const cf=knobConf[name];
+    const knob=cell.querySelector('.knob');
+    const out=cell.querySelector(`[data-out="${name}"]`);
+    function render(){
+      const p=(cf.val-cf.min)/(cf.max-cf.min);
+      knob.style.setProperty('--ang',lerp(-135,135,p)+'deg');
+      out.textContent=cf.val;
+    }
+    render();
+    let startY=null,startVal=0;
+    function down(e){startY=(e.touches?e.touches[0]:e).clientY;startVal=cf.val;knob.classList.add('spin');e.preventDefault();}
+    function move(e){
+      if(startY===null)return;
+      const y=(e.touches?e.touches[0]:e).clientY;
+      const dv=Math.round((startY-y)/16);            // 每 16px 一档（阻尼感）
+      const nv=clamp(startVal+dv*cf.step,cf.min,cf.max);
+      if(nv!==cf.val){cf.val=nv;render();
+        // 档位反馈：轻微缩放
+        knob.style.transform='scale(.94)';setTimeout(()=>knob.style.transform='',60);
+      }
+    }
+    function up(){startY=null;knob.classList.remove('spin');}
+    knob.addEventListener('mousedown',down);
+    knob.addEventListener('touchstart',down,{passive:false});
+    window.addEventListener('mousemove',move);
+    window.addEventListener('touchmove',move,{passive:false});
+    window.addEventListener('mouseup',up);
+    window.addEventListener('touchend',up);
+    // 滚轮也能调
+    knob.addEventListener('wheel',e=>{e.preventDefault();cf.val=clamp(cf.val+(e.deltaY<0?1:-1)*cf.step,cf.min,cf.max);render();},{passive:false});
+  });
+
+  /* ---------- 拨杆开关 ---------- */
+  document.querySelectorAll('[data-toggle]').forEach(cell=>{
+    const sw=cell.querySelector('.toggle');
+    sw.addEventListener('click',()=>{
+      sw.classList.toggle('on');
+      // 咔嗒反馈：杆帽轻微过冲已由 CSS transition 的弹性曲线实现
+    });
+  });
+
+  /* ---------- 拨轮 Jog：旋转切换快捷键 ---------- */
+  const KEYS=['F6','F7','F8','F9','F10','F11','F12'];
+  document.querySelectorAll('[data-jog]').forEach(cell=>{
+    const jog=cell.querySelector('.jog');
+    const dimple=cell.querySelector('.dimple');
+    const out=cell.querySelector('[data-out="key"]');
+    let idx=KEYS.indexOf(out.textContent.trim()); if(idx<0)idx=2;
+    let angle=0;
+    function render(){
+      idx=(idx+KEYS.length)%KEYS.length;
+      out.textContent=KEYS[idx];
+      dimple.style.transform=`rotate(${angle}deg)`;
+    }
+    render();
+    let startA=null,startIdx=0,cxy=null;
+    function center(){const r=jog.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2};}
+    function down(e){const p=(e.touches?e.touches[0]:e);cxy=center();startA=Math.atan2(p.clientY-cxy.y,p.clientX-cxy.x);startIdx=idx;e.preventDefault();}
+    function move(e){
+      if(startA===null)return;const p=(e.touches?e.touches[0]:e);
+      const a=Math.atan2(p.clientY-cxy.y,p.clientX-cxy.x);
+      let da=(a-startA)*180/Math.PI;
+      angle=da;
+      const steps=Math.round(da/35);                 // 每 35° 一档
+      idx=startIdx+steps;render();
+    }
+    function up(){startA=null;}
+    jog.addEventListener('mousedown',down);
+    jog.addEventListener('touchstart',down,{passive:false});
+    window.addEventListener('mousemove',move);
+    window.addEventListener('touchmove',move,{passive:false});
+    window.addEventListener('mouseup',up);
+    window.addEventListener('touchend',up);
+    jog.addEventListener('wheel',e=>{e.preventDefault();idx+=e.deltaY<0?1:-1;angle+=(e.deltaY<0?35:-35);render();},{passive:false});
+  });
+
+  /* ---------- 存储格式拨杆组（单选） ---------- */
+  document.querySelectorAll('[data-format] .fmt-opt').forEach(opt=>{
+    opt.addEventListener('click',()=>{
+      opt.parentElement.querySelectorAll('.fmt-opt').forEach(o=>o.classList.remove('on'));
+      opt.classList.add('on');
+    });
+  });
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReVox · Overlay</title>
+<style>
+/* ============================================================
+   ReVox · 声刻 — 游戏内 Overlay
+   后视镜里的一盏指示灯：平时几乎不存在，需要时余光扫到
+   无文字 / 无图标 / 无纹理 / 无边框 —— 只有光
+   ============================================================ */
+:root{
+  --amber:#ffb33e;
+  --amber-soft:#ffd27a;
+  --rec:#ff2d2d;
+  --rec-glow:#ff5b4a;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{
+  width:100%;height:100%;
+  /* 透明背景——真实 Overlay 时此处完全透明，不遮挡游戏 */
+  background:transparent;
+  overflow:hidden;
+  /* 整个覆盖层不响应鼠标，用户永远点不到 */
+  pointer-events:none;
+  font-family:ui-monospace,"SF Mono","Cascadia Code",monospace;
+}
+
+/* 演示用：模拟一张 R6 暗场截图当背景，方便看到光的效果。
+   真实部署时删掉这个 .demo-bg 即可。 */
+.demo-bg{
+  position:fixed;inset:0;z-index:-1;
+  background:
+    radial-gradient(80% 60% at 20% 15%, #2b2f36, transparent 60%),
+    radial-gradient(70% 50% at 85% 80%, #20242b, transparent 55%),
+    linear-gradient(160deg,#0e1013,#05060a 60%,#0b0d11);
+}
+.demo-bg::after{ /* 一点假"游戏 HUD"暗示这是游戏画面 */
+  content:"";position:absolute;inset:0;opacity:.5;
+  background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(0,0,0,.25) 3px 4px);
+}
+
+/* ============================================================
+   指示灯本体 —— 固定右下角，约 56px
+   ============================================================ */
+.indicator{
+  position:fixed;
+  right:34px;bottom:34px;
+  width:56px;height:56px;
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
+}
+
+/* ---- 底层：静默微光（始终存在，极淡） ---- */
+.glow{
+  position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,179,62,.55), rgba(255,179,62,0) 70%);
+  opacity:.10;                       /* 静默时几乎看不见 */
+  transition:opacity .5s ease;
+  filter:blur(1px);
+}
+
+/* ---- 中层：呼吸环（静默时极缓慢的呼吸） ---- */
+.ring{
+  position:absolute;inset:8px;border-radius:50%;
+  border:1.5px solid rgba(255,179,62,.18);
+  opacity:.25;
+  transition:opacity .4s ease, border-color .4s ease;
+  animation:breathe 4.5s ease-in-out infinite;
+}
+@keyframes breathe{
+  0%,100%{transform:scale(.9);opacity:.18}
+  50%{transform:scale(1.0);opacity:.32}
+}
+
+/* ---- VU 短线（语音波动时显现） ---- */
+.bars{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:3px;
+  opacity:0;transition:opacity .25s ease;
+}
+.bars i{
+  width:3px;height:6px;border-radius:2px;
+  background:linear-gradient(180deg,var(--amber-soft),var(--amber));
+  box-shadow:0 0 4px rgba(255,179,62,.7);
+  transform-origin:center;
+  transition:height .09s ease;     /* 跳动要快 */
+}
+
+/* ---- 触发脉冲环（红色，闪一下淡出） ---- */
+.pulse{
+  position:absolute;inset:0;border-radius:50%;
+  border:2px solid var(--rec);
+  opacity:0;
+}
+.pulse.fire{animation:pulseFire 3s ease-out forwards}
+@keyframes pulseFire{
+  0%{transform:scale(.6);opacity:0;border-width:3px}
+  6%{transform:scale(1);opacity:1;box-shadow:0 0 18px 4px rgba(255,45,45,.8)}   /* 0.1s 内亮起 */
+  22%{transform:scale(1.35);opacity:.9}
+  100%{transform:scale(2.2);opacity:0;border-width:1px}
+}
+/* 触发时核心闪红 */
+.core-flash{
+  position:absolute;inset:14px;border-radius:50%;
+  background:radial-gradient(circle, var(--rec-glow), var(--rec) 60%, transparent 75%);
+  opacity:0;
+}
+.core-flash.fire{animation:coreFlash 3s ease-out forwards}
+@keyframes coreFlash{
+  0%{opacity:0;transform:scale(.5)}
+  6%{opacity:.95;transform:scale(1)}
+  40%{opacity:.4}
+  100%{opacity:0;transform:scale(.8)}
+}
+
+/* ============================================================
+   状态切换（由 JS 给 .indicator 加 class）
+   ============================================================ */
+/* 语音波动：微光亮起，VU 显现 */
+.indicator.active .glow{opacity:.45}
+.indicator.active .ring{opacity:.5;border-color:rgba(255,179,62,.4);animation-duration:1.6s}
+.indicator.active .bars{opacity:1}
+
+/* ============================================================
+   演示控制台（真实部署时删除整个 .demo-panel）
+   ============================================================ */
+.demo-panel{
+  position:fixed;left:24px;top:24px;
+  pointer-events:auto;                 /* 仅演示面板可点 */
+  font-family:ui-monospace,monospace;color:#9aa0a6;
+  background:rgba(20,21,23,.85);border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;padding:14px 16px;backdrop-filter:blur(4px);
+  font-size:12px;line-height:1.6;max-width:280px;
+}
+.demo-panel h3{color:var(--amber);font-size:13px;letter-spacing:2px;margin-bottom:8px;font-weight:600}
+.demo-panel p{margin-bottom:10px;color:#73777c;font-size:11px}
+.demo-panel .state{color:var(--amber-soft);font-weight:600}
+.demo-panel button{
+  pointer-events:auto;cursor:pointer;font-family:inherit;font-size:11px;
+  background:linear-gradient(180deg,#34353a,#1c1d1f);color:#c8ccd0;
+  border:1px solid rgba(255,255,255,.1);border-radius:5px;
+  padding:7px 10px;margin:3px 4px 3px 0;letter-spacing:.5px;
+  transition:all .15s;
+}
+.demo-panel button:hover{border-color:rgba(255,179,62,.5);color:var(--amber-soft)}
+.demo-panel button:active{transform:translateY(1px)}
+.demo-panel .auto{color:#5e646b;font-size:10px;margin-top:8px}
+</style>
+</head>
+<body>
+
+<!-- 演示背景（真实部署删除） -->
+<div class="demo-bg"></div>
+
+<!-- ============ 指示灯本体 ============ -->
+<div class="indicator" id="ind">
+  <div class="glow"></div>
+  <div class="ring"></div>
+  <div class="bars">
+    <i></i><i></i><i></i><i></i><i></i>
+  </div>
+  <div class="core-flash" id="coreFlash"></div>
+  <div class="pulse" id="pulse"></div>
+</div>
+
+<!-- ============ 演示控制台（真实部署删除） ============ -->
+<div class="demo-panel">
+  <h3>ReVox OVERLAY</h3>
+  <p>右下角指示灯演示。真实运行时整层透明、不可点击，叠在游戏画面上。当前状态：<span class="state" id="stateTxt">静默监听</span></p>
+  <button onclick="DEMO.silent()">① 静默监听</button>
+  <button onclick="DEMO.active()">② 语音波动</button>
+  <button onclick="DEMO.trigger()">③ 触发录制</button>
+  <div class="auto">自动循环演示中…</div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  const ind   = document.getElementById('ind');
+  const bars  = [...ind.querySelectorAll('.bars i')];
+  const pulse = document.getElementById('pulse');
+  const core  = document.getElementById('coreFlash');
+  const stateTxt = document.getElementById('stateTxt');
+
+  let mode = 'silent';     // silent | active
+  let vuTimer = null;
+
+  function startVU(){
+    if(vuTimer) return;
+    vuTimer = setInterval(()=>{
+      bars.forEach((b,i)=>{
+        // 中间高两边低的语音包络 + 随机跳动
+        const env = 1 - Math.abs(i-2)/3;
+        const h = 4 + Math.random()*16*env*(0.5+Math.random()*0.5);
+        b.style.height = h.toFixed(1)+'px';
+      });
+    }, 90);   // 快速跳动
+  }
+  function stopVU(){
+    clearInterval(vuTimer); vuTimer=null;
+    bars.forEach(b=>b.style.height='6px');
+  }
+
+  const DEMO = {
+    silent(){
+      mode='silent';
+      ind.classList.remove('active');
+      stopVU();
+      stateTxt.textContent='静默监听';
+    },
+    active(){
+      mode='active';
+      ind.classList.add('active');
+      startVU();
+      stateTxt.textContent='语音波动';
+    },
+    trigger(){
+      // 触发：闪红脉冲 + 核心闪，3 秒后淡出回到原状态
+      pulse.classList.remove('fire'); core.classList.remove('fire');
+      void pulse.offsetWidth; void core.offsetWidth;  // 强制重排以重启动画
+      pulse.classList.add('fire'); core.classList.add('fire');
+      stateTxt.textContent='触发录制 ●REC';
+      setTimeout(()=>{
+        pulse.classList.remove('fire'); core.classList.remove('fire');
+        stateTxt.textContent = mode==='active' ? '语音波动' : '静默监听';
+      }, 3000);
+    }
+  };
+  window.DEMO = DEMO;
+
+  /* ---- 自动循环演示：静默→波动→触发→静默 ---- */
+  function loop(){
+    DEMO.silent();
+    setTimeout(DEMO.active, 2200);
+    setTimeout(DEMO.trigger, 5200);
+    setTimeout(loop, 9500);
+  }
+  loop();
+})();
+</script>
+</body>
+</html>
