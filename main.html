@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ReVox (声刻) | Voice-triggered Replay Capture</title>
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-voice"></i>
+                <h1>ReVox <span class="chinese">声刻</span></h1>
+            </div>
+            <div class="status">
+                <span id="gameStatus" class="status-badge offline">
+                    <i class="fas fa-gamepad"></i> Game: Offline
+                </span>
+                <span id="voiceStatus" class="status-badge disabled">
+                    <i class="fas fa-microphone"></i> Voice: Disabled
+                </span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Game Info Card -->
+            <section class="card">
+                <h2><i class="fas fa-info-circle"></i> Game Status</h2>
+                <div id="gameInfo" class="game-info">
+                    <p><i class="fas fa-hourglass-start"></i> Waiting for Rainbow Six Siege...</p>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="label">Map:</span>
+                            <span id="mapName" class="value">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Mode:</span>
+                            <span id="gameMode" class="value">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">K/D:</span>
+                            <span id="kdRatio" class="value">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Round:</span>
+                            <span id="roundNumber" class="value">-</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Voice Control Card -->
+            <section class="card">
+                <h2><i class="fas fa-microphone-alt"></i> Voice Control</h2>
+                <div class="voice-control">
+                    <div class="voice-toggle">
+                        <button id="toggleVoice" class="btn btn-large btn-primary">
+                            <i class="fas fa-microphone-slash"></i> Enable Voice Control
+                        </button>
+                        <p class="hint">Click to enable voice trigger. Say "save that" or "clip that" to capture.</p>
+                    </div>
+                    <div class="voice-commands">
+                        <h3><i class="fas fa-list-alt"></i> Available Commands</h3>
+                        <ul>
+                            <li><code>"save that"</code> - Save last 15 seconds</li>
+                            <li><code>"clip that"</code> - Save last 30 seconds</li>
+                            <li><code>"highlight"</code> - Save last kill</li>
+                            <li><code>"stop listening"</code> - Disable voice</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recent Events -->
+            <section class="card">
+                <h2><i class="fas fa-history"></i> Recent Events</h2>
+                <div id="eventLog" class="event-log">
+                    <div class="empty-state">
+                        <i class="fas fa-clock"></i>
+                        <p>Game events will appear here</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings -->
+            <section class="card">
+                <h2><i class="fas fa-cog"></i> Settings</h2>
+                <div class="settings">
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="autoClipKills" checked>
+                            Auto-clip on kills
+                        </label>
+                        <span class="setting-desc">Automatically save replay when you get a kill</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="autoClipDeaths" checked>
+                            Auto-clip on deaths
+                        </label>
+                        <span class="setting-desc">Save replay when you die (for analysis)</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="notifyOnClip" checked>
+                            Show notification
+                        </label>
+                        <span class="setting-desc">Show desktop notification when clip is saved</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>ReVox (声刻) - Voice-triggered replay capture for R6 Siege</p>
+            <p class="version">v0.1.0 | Waiting for Overwolf whitelist approval</p>
+        </footer>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

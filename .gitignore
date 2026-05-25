@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+build/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Overwolf specific
+_metadata/
+verified_contents.json

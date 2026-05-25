@@ -1,0 +1,49 @@
+{
+  "manifest_version": 1,
+  "type": "WebApp",
+  "meta": {
+    "name": "ReVox",
+    "version": "0.1.0",
+    "author": "Yanming",
+    "description": "ReVox (声刻) - Voice-triggered replay capture for R6 Siege. Use your voice to save epic moments.",
+    "icon": "icons/icon_128.png",
+    "icon_gray": "icons/icon_128_gray.png"
+  },
+  "permissions": [
+    "game_events",
+    "media",
+    "microphone",
+    "overwolf",
+    "tray"
+  ],
+  "data": {
+    "game_events": [
+      {
+        "game_id": 10826,
+        "features": [
+          "kill",
+          "death",
+          "match_info",
+          "game_info",
+          "me",
+          "roster"
+        ]
+      }
+    ],
+    "externally_connectable": {
+      "matches": []
+    }
+  },
+  "launch_events": [
+    {
+      "event": "GameLaunch",
+      "start_minimized": true
+    }
+  ],
+  "extra-objects": {
+    "background": {
+      "file": "background.html",
+      "debug": "background.html"
+    }
+  }
+}
